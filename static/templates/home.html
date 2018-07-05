@@ -1,22 +1,43 @@
+<!DOCTYPE html>
 <html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Location Tracker</title>
+    <link rel="stylesheet" type="text/css" href="css/maps.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+  </head>
   <body>
-	<h1>Locations</h1>
-		<table>
-	    {% for locations in locations %}
-	    <tr>
-	      <td>{{locations.latitude}}</td>
-	      <td>{{locations.longitude}}</td>
-	      <td>{{locations.timestamp}}</td>
-	  	</tr>
-	    {% endfor %}
-		</table>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="js/maps.js"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDtTW5TNHjziussxOe-RkPJ5lHyoFQa1tk&callback=initMap"></script>
 
-    <form method="POST" action="/">
-      Lat: <input type="text" name="latitude"><br>
-      Long: <input type="text" name="longitude">
-      <input type="submit" value="Add">
-    </form>
+    <div class="row", id="bodyDiv">
+    	<div class="col-md-3">
+    		<div id="data">
+    			<table class="table">
+    				<thead>
+						<tr>
+							<th scope="col">Lat</th>
+							<th scope="col">Long</th>
+							<th scope="col">Time</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+    			</table>
+    		</div>
 
+
+    	</div>
+    	<div class="col-md-9" id="mapHolder">
+    		<div id="map"></div>
+    	</div>
+	</div>
 
   </body>
 </html>
+
