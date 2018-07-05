@@ -1,0 +1,22 @@
+<html>
+  <body>
+	<h1>Locations</h1>
+		<table>
+	    {% for locations in locations %}
+	    <tr>
+	      <td>{{locations.latitude}}</td>
+	      <td>{{locations.longitude}}</td>
+	      <td>{{locations.timestamp}}</td>
+	  	</tr>
+	    {% endfor %}
+		</table>
+
+    <form method="POST" action="/">
+      Lat: <input type="text" name="latitude"><br>
+      Long: <input type="text" name="longitude">
+      <input type="submit" value="Add">
+    </form>
+
+
+  </body>
+</html>
