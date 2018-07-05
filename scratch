@@ -1,8 +1,4 @@
-curl -X POST -H "Content-Type: application/json" -d '{
-    "latitude": "54.0835043", 
-    "longitude": "-4.7472562", 
-    "timestamp": "1530799227000"
-}' http://localhost:5000/new
+
 
 curl -X POST -H "Content-Type: application/json" -d '{
     "latitude": "54.085294", 
@@ -17,8 +13,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
 }' http://localhost:5000/new
 
 curl -X POST -H "Content-Type: application/json" -d '{
-    "latitude": "54.083038", 
-    "longitude": "-4.744310", 
-    "timestamp": "1530799230000"
+    "latitude": "54.0842871", 
+    "longitude": "-4.7567188", 
 }' http://localhost:5000/new
 

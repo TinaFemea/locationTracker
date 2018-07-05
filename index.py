@@ -3,9 +3,9 @@ import datetime
 import json
 import uuid
 
-from collections import OrderedDict
+from geopy import distance
+from datetime import timezone
 from flask import Flask, jsonify, request, render_template
-
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__,
@@ -22,46 +22,55 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-class DictSerializable(object):
-	def _asdict(self):
-		result = OrderedDict()
-		for key in self.__mapper__.c.keys():
-			result[key] = getattr(self, key)
-		return result
+class OutputLocation:
+	def __init__(self, locationModel):
+		self.uuid = locationModel.uuid
+		self.latitude = locationModel.latitude
+		self.longitude = locationModel.longitude
+		self.timestamp = locationModel.timestamp
+	
+	def toJson(self):
+		return json.dumps(self.__dict__)
 
-class Location(db.Model, DictSerializable):
+	def __repr__(self):
+		return self.toJson()
+
+
+def obj_dict(obj):
+    return obj.__dict__
+
+class Location(db.Model):
 	uuid = db.Column(db.String(32), unique=True, nullable=False, primary_key=True)
 	latitude = db.Column(db.Float(), unique=False, nullable=False, primary_key=False)
 	longitude = db.Column(db.Float(), unique=False, nullable=False, primary_key=False)
-	timestamp = db.Column(db.DateTime(), unique=False, nullable=False, primary_key=False)
+	timestamp = db.Column(db.Integer(), unique=False, nullable=False, primary_key=False)
 
 	def __repr__(self):
-		return self.toJSON
-
-	def toJSON(self):
-		return json.dumps(self.__dict__)
-
-def convert_java_millis(java_time_millis):
-	# Provided a java timestamp convert it into python date time object
-	ds = datetime.datetime.fromtimestamp(
-		int(str(java_time_millis)[:10])) if java_time_millis else None
-	ds = ds.replace(hour=ds.hour,minute=ds.minute,second=ds.second,microsecond=int(str(java_time_millis)[10:]) * 1000)
-	return ds	
+		return self.timestamp
 
 @app.route("/", methods=["GET", "POST"])
 def home():
-	if request.form:
-		location = Location(latitude=request.form.get("latitude"), longitude=request.form.get("longitude"))
-		db.session.add(location)
-		db.session.commit()
-
-	locations = Location.query.all()
-	return render_template("home.html", locations=locations)
+	return render_template("home.html")
 
 @app.route('/locations')
 def get_locations():
-	locations = Location.query.all()
-	return jsonify(locations)
+	arrayList = []
+
+	results = Location.query.order_by(Location.timestamp).all()
+	for i in range(len(results)):
+		location = results[i]
+		outLocation = OutputLocation(location)
+		if (i == 0):
+			outLocation.timeDelta = 0
+			outLocation.spaceDelta = 0
+		else:
+			outLocation.timeDelta = (location.timestamp - results[i-1].timestamp) / 1000
+			oldLL = (results[i-1].latitude, results[i-1].longitude)
+			thisLL = (location.latitude, location.longitude)
+			outLocation.spaceDelta = distance.distance(oldLL, thisLL).meters
+		arrayList.append(outLocation)
+
+	return json.dumps(arrayList, default=obj_dict)
 
 
 @app.route('/new', methods=['POST'])
@@ -69,9 +78,7 @@ def add_new():
 	content = request.get_json()
 	print(content)
 	if 'timestamp' not in content:
-		content["timestamp"] = datetime.datetime.utcnow()
-	else:
-		content["timestamp"] = convert_java_millis(content["timestamp"])
+		content["timestamp"] = datetime.datetime.utcnow().replace(tzinfo=timezone.utc).timestamp() * 1000
 
 	location = Location(latitude=content["latitude"], longitude=content["longitude"], timestamp=content["timestamp"], uuid=uuid.uuid1().hex)
 	db.session.add(location)
