@@ -41,7 +41,14 @@ var currLocs = {
 		return this.dataList[uuid].marker;
 	},
 
-
+	lastPoint: function() {
+		if (this.dataList && Object.keys(this.dataList).length > 0) {
+			var key = Object.keys(this.dataList)[Object.keys(this.dataList).length-1];
+			return this.dataList[key].timestamp;
+		} else {
+			return 0;
+		}
+	},
 
  	handleNewData: function(allTheLocs) {
  		var oldUUIDs = [];
@@ -63,13 +70,14 @@ var currLocs = {
  			}
  		}
 
- 		for(var i = 0; i < Object.keys(oldUUIDs).length; i++) {
+ 		/*for(var i = 0; i < Object.keys(oldUUIDs).length; i++) {
  			var key = Object.keys(oldUUIDs)[i];
  			if (oldUUIDs[key] == 0) {
  				removeStale(this.dataList[key]);
  				delete this.dataList[key];
  			}
  		}
+ 		*/
  	}	
 }
 
@@ -83,6 +91,40 @@ function pad(num, size) {
     return s.substr(s.length-size);
 }
 
+var lastStartPoint = [0, 0]
+var lastSPMarker
+
+function addStartingPoint(startingPoint) {
+	if (!map)
+		return;
+
+	if (lastStartPoint[0] == startingPoint[0] && 
+		lastStartPoint[0] == startingPoint[0]) {
+		return;
+	}
+
+	if (lastSPMarker)
+		lastSPMarker.setMap(null);
+
+	lastStartPoint[0] = startingPoint[0];
+	lastStartPoint[1] = startingPoint[1];
+	
+	var position = {lat: Number(startingPoint[0]), lng: Number(startingPoint[1])};
+
+	var icon = {
+        url: "flag.svg",
+        scaledSize: new google.maps.Size(50,50)
+    }
+
+	lastSPMarker = new google.maps.Marker({
+	  position: position,
+	  map: map,
+	  icon: icon,
+	  title: "start point",
+
+	});
+}
+
 function addNew(currLoc) {
 	var position = {lat: Number(currLoc.latitude), lng: Number(currLoc.longitude)};
 
@@ -93,15 +135,9 @@ function addNew(currLoc) {
 		bounds = new google.maps.LatLngBounds()
 	}
 
-	currLoc.marker = new google.maps.Marker({
-	  position: position,
-	  map: map,
-	  title: currLoc.uuid
-	});
+	
 
-    //	Fix the map bounds
-    bounds.extend(currLoc.marker.getPosition());
-	map.fitBounds(bounds);
+
 
 	ppTime = new Date(currLoc.timestamp);
 	//This is UTC!
@@ -122,7 +158,17 @@ function addNew(currLoc) {
         );
 
     $("#data tbody").append(currLoc.tr);
+	
+	//	add the marker
+	currLoc.marker = new google.maps.Marker({
+	  position: position,
+	  map: map,
+	  title: ppTimeString
+	});
 
+    //	Fix the map bounds
+    bounds.extend(currLoc.marker.getPosition());
+	map.fitBounds(bounds);
     optionSelector = '#filterTime option[value="' + ppDateString + '"]';
     if ($(optionSelector).length == 0) {
     	$('#filterTime').append($('<option>').attr('value', ppDateString).text(ppDateString));
@@ -140,10 +186,11 @@ function removeStale(currLoc) {
 }
 
 function update() {
-	$.ajax({url: "\locations", context: document.body}).done(function(data) {
-		data = JSON.parse(data);
-		currLocs.handleNewData(data);
-
-		//setTimeout(update(), 500);
-	});
+	var lastPoint = currLocs.lastPoint();
+	$.ajax({url: "\locations?after=" + lastPoint, context: document.body}).done(function(data) {
+		results = data.results
+		currLocs.handleNewData(results);
+		addStartingPoint(data.startPoint);
+		setTimeout(function(){ update(); }, 1000);
+	})
 }

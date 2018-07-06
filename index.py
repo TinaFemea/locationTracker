@@ -5,6 +5,7 @@ import uuid
 
 from geopy import distance
 from datetime import timezone
+from collections import OrderedDict
 from flask import Flask, jsonify, request, render_template
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import event, DDL
@@ -36,6 +37,7 @@ class OutputLocation:
 		self.startDelta = locationModel.startDelta
 		self.timeDelta = locationModel.timeDelta
 		self.lap = locationModel.lap
+		self.movingCloser = locationModel.movingCloser
 	
 	def toJson(self):
 		return json.dumps(self.__dict__)
@@ -54,7 +56,14 @@ class StartingPoint(db.Model):
 	def __repr__(self):
 		return self.timestamp
 
-class Location(db.Model):
+class DictSerializable(object):
+	def _asdict(self):
+		result = OrderedDict()
+		for key in self.__mapper__.c.keys():
+			result[key] = getattr(self, key)
+		return result
+
+class Location(db.Model, DictSerializable):
 	uuid = db.Column(db.String(32), unique=True, nullable=False, primary_key=True)
 	latitude = db.Column(db.Float(), unique=False, nullable=False, primary_key=False)
 	longitude = db.Column(db.Float(), unique=False, nullable=False, primary_key=False)
@@ -63,9 +72,13 @@ class Location(db.Model):
 	spaceDelta = db.Column(db.Float(), unique=False, nullable=True, primary_key=False) 
 	timeDelta = db.Column(db.Float(), unique=False, nullable=True, primary_key=False) 
 	lap = db.Column(db.Integer(), unique=False, nullable=True, primary_key=False) 
+	movingCloser = db.Column(db.Boolean(), unique=False, nullable=True, primary_key=False)
 
 	def __repr__(self):
-		return self.timestamp
+		return self.toJSON
+
+	def toJSON(self):
+		return json.dumps(self.__dict__)
 
 def afterCreate(target, connection, **kw):
 	connection.execute("Insert into starting_point (latitude, longitude, timestamp) values (54.083245, -4.744232, 0)")
@@ -89,18 +102,31 @@ def get_locations():
 	filterTS = request.args.get('after', default = 0, type = int)
 	filterLap = request.args.get('lap', default = 0, type = int)
 	filterDate = request.args.get('date', default = 0, type = int)
-	arrayList = []
 	
 	results = Location.query.filter(Location.timestamp > filterTS).order_by(Location.timestamp).all()
-	for i in range(len(results)):
-		location = results[i]
-		outLocation = OutputLocation(location)
-		arrayList.append(outLocation)
 
-	return json.dumps(arrayList, default=obj_dict)
+	retValue = {}
+	retValue["results"] = results
+	retValue["startPoint"] = startLocation
+	return jsonify(retValue)
 
 def getLastPointFromDB():
 	return Location.query.order_by(Location.timestamp.desc()).first()
+
+def computeLap(currPoint, prevPoint):
+	if ((currPoint.timestamp - prevPoint.timestamp) > (3600 * 1000)): # one hour
+		return 0
+
+	if (currPoint.startDelta > 50): # we're really far away
+		return prevPoint.lap
+
+	if (currPoint.startDelta == prevPoint.startDelta): # we haven't moved
+		return prevPoint.lap
+	
+	if (prevPoint.movingCloser == True and currPoint.movingCloser == False): #we've changed directions
+		return prevPoint.lap + 1
+
+	return prevPoint.lap
 
 @app.route('/new', methods=['POST'])
 def add_new():
@@ -108,23 +134,33 @@ def add_new():
 	if 'timestamp' not in content:
 		content["timestamp"] = datetime.datetime.utcnow().replace(tzinfo=timezone.utc).timestamp() * 1000
 
+	content["timestamp"] = float(content["timestamp"])
+	content["latitude"] = float(content["latitude"])
+	content["longitude"] = float(content["longitude"])
+
+	location = Location(latitude=content["latitude"], 
+						longitude=content["longitude"], 
+						timestamp=content["timestamp"], 
+						uuid=uuid.uuid1().hex)
+
 	thisLL = (content["latitude"], content["longitude"])
+	location.startDelta = distance.distance(thisLL, startLocation).meters
 
 	prevPoint = getLastPointFromDB()
 	if (prevPoint is None):
-		spaceDelta = 0
-		timeDelta = 0
+		location.spaceDelta = 0
+		location.timeDelta = 0
+		location.lap = 0
+		location.movingCloser = False
 	else:
+		if (prevPoint.latitude == location.latitude and prevPoint.longitude == location.longitude):
+			print ("dupe")
+			return '', 204
 		oldLL = (prevPoint.latitude, prevPoint.longitude)
-		spaceDelta = distance.distance(oldLL, thisLL).meters
-		timeDelta = (content["timestamp"] - prevPoint.timestamp) / 1000
-
-	startDelta = distance.distance(thisLL, startLocation).meters
-	lap = 0
-
-	location = Location(latitude=content["latitude"], longitude=content["longitude"], 
-			timestamp=content["timestamp"], uuid=uuid.uuid1().hex, startDelta=startDelta,
-			spaceDelta = spaceDelta, timeDelta = timeDelta, lap = lap)
+		location.spaceDelta = distance.distance(oldLL, thisLL).meters
+		location.timeDelta = (location.timestamp - prevPoint.timestamp) / 1000
+		location.movingCloser = (location.startDelta < prevPoint.startDelta)
+		location.lap = computeLap(location, prevPoint)
 
 	db.session.add(location)
 	db.session.commit()

@@ -3,6 +3,10 @@
 	height: 100%;
 }
 
+#data {
+	  overflow-y: scroll;
+}
+
 /* Optional: Makes the sample page fill the window. */
 html, body {
 	height: 100%;
