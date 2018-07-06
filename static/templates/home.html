@@ -15,29 +15,40 @@
     <script type="text/javascript" src="js/maps.js"></script>
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDtTW5TNHjziussxOe-RkPJ5lHyoFQa1tk&callback=initMap"></script>
 
-    <div class="row", id="bodyDiv">
-    	<div class="col-md-3">
-    		<div id="data">
-    			<table class="table">
-    				<thead>
-						<tr>
-							<th scope="col">Location</th>
-							<th scope="col">Time</th>
-							<th scope="col">Delta</th>
-						</tr>
-					</thead>
-					<tbody>
-					</tbody>
-    			</table>
-    		</div>
-
-
+    <div class="container-fluid">
+        <div class="row" id="bodyDiv">
+        	<div id="data" class="col-md-3">
+                <div class="row">&nbsp;</div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <span>Day: <select id="filterTime"><option value="all">All</option></select></span>
+                    </div>
+                    <div class="col-md-6">
+                        Lap: <select id="filterLap"><option>1</option></select>
+                    </div>
+                </div>
+                <div class="row"> 
+                    <div class="col-md-12">   
+            			<table class="table">
+            				<thead>
+        						<tr>
+        							<th scope="col">Location</th>
+        							<th scope="col">Time</th>
+        							<th scope="col">Delta</th>
+                                    <th scope="col">Lap</th>
+        						</tr>
+        					</thead>
+        					<tbody>
+        					</tbody>
+            			</table>
+                    </div>
+                </div>
+        	</div>
+        	<div class="col-md-9" id="mapHolder">
+        		<div id="map"></div>
+        	</div>
     	</div>
-    	<div class="col-md-9" id="mapHolder">
-    		<div id="map"></div>
-    	</div>
-	</div>
-
+    </div>
   </body>
 </html>
 

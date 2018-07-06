@@ -1,4 +1,5 @@
 var map;
+var bounds;
 
 function compare(a,b) {
   if (Number(a.timestamp) < Number(b.timestamp))
@@ -89,6 +90,7 @@ function addNew(currLoc) {
 		map = new google.maps.Map(document.getElementById('map'), {
 					zoom: 15,
 					center: position});
+		bounds = new google.maps.LatLngBounds()
 	}
 
 	currLoc.marker = new google.maps.Marker({
@@ -97,26 +99,39 @@ function addNew(currLoc) {
 	  title: currLoc.uuid
 	});
 
+    //	Fix the map bounds
+    bounds.extend(currLoc.marker.getPosition());
+	map.fitBounds(bounds);
 
 	ppTime = new Date(currLoc.timestamp);
 	//This is UTC!
-	ppTimeString = 	pad(ppTime.getDate(), 2) + "-" +
+	ppDateString = 	pad(ppTime.getDate(), 2) + "-" +
 					pad(ppTime.getMonth(), 2) + "-" +
-					pad(ppTime.getFullYear(), 4) + "<br>" +
+					pad(ppTime.getFullYear(), 4)
 
-					pad(ppTime.getHours(), 2) + ":" + 
+	ppTimeString =	pad(ppTime.getHours(), 2) + ":" + 
 					pad(ppTime.getMinutes(), 2) + ":" +
 					pad(ppTime.getSeconds(), 2) + "." + 
 					pad(ppTime.getMilliseconds(), 3);
 
 	currLoc.tr = $('<tr>').attr("id",currLoc.uuid).append(
-            $('<td onclick="handleClick(event);">').html(currLoc.latitude + "<br>" + currLoc.longitude) ,
-            $('<td>').html(ppTimeString),
-            $('<td>').html(Number(currLoc.timeDelta).toFixed(3).toString() + " sec" + "<br>" + Number(currLoc.spaceDelta).toFixed(3).toString() + " m" ),
-          
+            $('<td onclick="handleClick(event);">').html(currLoc.latitude + "<br>" + currLoc.longitude),
+            $('<td>').html(ppDateString + "<br>" + ppTimeString),
+            $('<td>').html(Number(currLoc.timeDelta).toFixed(3).toString() + " sec" + "<br>" + Number(currLoc.startDelta).toFixed(3).toString() + " m" ),
+            $('<td>').html(currLoc.lap)
         );
 
     $("#data tbody").append(currLoc.tr);
+
+    optionSelector = '#filterTime option[value="' + ppDateString + '"]';
+    if ($(optionSelector).length == 0) {
+    	$('#filterTime').append($('<option>').attr('value', ppDateString).text(ppDateString));
+    }
+
+	lapOptionSelector = '#filterLap option[value="' + currLoc.lap + '"]';
+    if ($(lapOptionSelector).length == 0) {
+    	$('#filterLap').append($('<option>').attr('value', currLoc.lap).text(currLoc.lap));
+    }
 }
 
 function removeStale(currLoc) {
@@ -129,6 +144,6 @@ function update() {
 		data = JSON.parse(data);
 		currLocs.handleNewData(data);
 
-		setTimeout(update(), 500);
+		//setTimeout(update(), 500);
 	});
 }

@@ -14,6 +14,6 @@ curl -X POST -H "Content-Type: application/json" -d '{
 
 curl -X POST -H "Content-Type: application/json" -d '{
     "latitude": "54.0842871", 
-    "longitude": "-4.7567188", 
-}' http://localhost:5000/new
+    "longitude": "-4.7567188"
+}' http://localhost:5000/startPoint
 
