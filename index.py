@@ -95,15 +95,37 @@ def beforeFirst():
 
 @app.route("/", methods=["GET", "POST"])
 def home():
-	return render_template("home.html")
+	timestamps = db.session.query(Location.timestamp).all()
+	dayList = []
+	for timestamp in timestamps:
+		dayString = getDayFromTS(timestamp.timestamp)
+		if (dayString not in dayList):
+			dayList.append(dayString)
+
+	return render_template("home.html", days = dayList)
 
 @app.route('/locations')
 def get_locations():
 	filterTS = request.args.get('after', default = 0, type = int)
-	filterLap = request.args.get('lap', default = 0, type = int)
-	filterDate = request.args.get('date', default = 0, type = int)
+	filterLap = request.args.get('filterLap')
+	filterDate = request.args.get('filterDate')
+
+	query = Location.query.filter(Location.timestamp > filterTS)
 	
-	results = Location.query.filter(Location.timestamp > filterTS).order_by(Location.timestamp).all()
+	if (filterDate == None):
+		filterDate = datetime.date.today().isoformat()
+
+	if(filterDate is not "all"):
+		startEndTime = getRangefromDay(filterDate)
+		print(startEndTime)
+		query = query.filter(Location.timestamp >= startEndTime[0]).filter(Location.timestamp <= startEndTime[1])
+
+
+	if (filterLap is not None and filterLap != "All"):
+		print(filterLap)
+		query = query.filter(Location.lap == filterLap)
+
+	results = query.order_by(Location.timestamp).all()
 
 	retValue = {}
 	retValue["results"] = results
@@ -113,9 +135,23 @@ def get_locations():
 def getLastPointFromDB():
 	return Location.query.order_by(Location.timestamp.desc()).first()
 
+def getDayFromTS(timestamp):
+	theDT = datetime.datetime.utcfromtimestamp(timestamp/1000)
+	return datetime.date(theDT.year, theDT.month, theDT.day).isoformat();
+
+def getRangefromDay(dayString):
+	startDT = datetime.datetime.strptime( dayString, "%Y-%m-%d" );
+	startJTS = startDT.replace(tzinfo=timezone.utc).timestamp() * 1000
+	endDT = startDT + datetime.timedelta(days=1) - datetime.timedelta(seconds=1)
+	endJTS = endDT.replace(tzinfo=timezone.utc).timestamp() * 1000
+	return (startJTS, endJTS)
+
 def computeLap(currPoint, prevPoint):
-	if ((currPoint.timestamp - prevPoint.timestamp) > (3600 * 1000)): # one hour
+	if (getDayFromTS(currPoint.timestamp) != getDayFromTS(prevPoint.timestamp)): # date changed
 		return 0
+
+	if ((currPoint.timestamp - prevPoint.timestamp) > (3600 * 1000)): # one hour
+		return prevPoint.lap + 1
 
 	if (currPoint.startDelta > 50): # we're really far away
 		return prevPoint.lap

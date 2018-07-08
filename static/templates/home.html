@@ -5,13 +5,11 @@
     <meta charset="utf-8">
     <title>Location Tracker</title>
     <link rel="stylesheet" type="text/css" href="css/maps.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-
-  </head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+      </head>
   <body>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
     <script type="text/javascript" src="js/maps.js"></script>
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDtTW5TNHjziussxOe-RkPJ5lHyoFQa1tk&callback=initMap"></script>
 
@@ -21,15 +19,24 @@
                 <div class="row">&nbsp;</div>
                 <div class="row">
                     <div class="col-md-6">
-                        <span>Day: <select id="filterTime"><option value="all">All</option></select></span>
+                        <span>Day: 
+                            <select id="filterTime">
+                                <option value="all">All</option>
+                                {% for day in days %}
+                                <option value="{{ day }}"]'>{{ day }}</option>
+                                {% endfor %}
+                            </select></span>
                     </div>
                     <div class="col-md-6">
-                        Lap: <select id="filterLap"><option>All</option></select>
+                        Lap:
+                        <select id="filterLap">
+                            <option>All</option>
+                        </select>
                     </div>
                 </div>
                 <div class="row"> 
                     <div class="col-md-12">   
-            			<table class="table">
+            			<table class="table .table-bordered ">
             				<thead>
         						<tr>
         							<th scope="col">Location</th>
