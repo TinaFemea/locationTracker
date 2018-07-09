@@ -32,7 +32,7 @@ function handleClick(e){
 	setTimeout(stopBounce.bind(null, loc.marker), 1000);
 }
 
-var maxMarkers = 100;
+var maxMarkers = 25;
 
 var currLocs = {
 	dataList: [],
@@ -63,7 +63,7 @@ var currLocs = {
 	countMarkers: function() {
 		var counter = 0;
 		this.dataList.forEach(function(item) {
-			counter = counter + 1;
+			if (item.marker) counter = counter + 1;
 		});
 		return counter;
 	},
@@ -99,6 +99,8 @@ var currLocs = {
 			var needsMarker = ((i % howManyPointsBetween) == 0);
 			if (this.dataList[i].marker && !needsMarker) {
 				removeMarker(this.dataList[i]);
+			} else if (!this.dataList[i].marker && needsMarker) {
+				addMarker(this.dataList[i]);
 			}
 		};
 		

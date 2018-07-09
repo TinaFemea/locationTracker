@@ -106,16 +106,18 @@ def home():
 
 @app.route('/locations')
 def get_locations():
-	filterTS = request.args.get('after', default = 0, type = int)
+	filterTS = request.args.get('after', default = 0, type = float)
 	filterLap = request.args.get('filterLap')
 	filterDate = request.args.get('filterDate')
 
+	print(filterTS)
+	
 	query = Location.query.filter(Location.timestamp > filterTS)
 	
 	if (filterDate == None):
 		filterDate = datetime.date.today().isoformat()
 
-	if(filterDate is not "all"):
+	if(filterDate != "all"):
 		startEndTime = getRangefromDay(filterDate)
 		print(startEndTime)
 		query = query.filter(Location.timestamp >= startEndTime[0]).filter(Location.timestamp <= startEndTime[1])
